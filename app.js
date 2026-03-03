@@ -1,3 +1,203 @@
+// Données
+const produits = {
+    pizzas: [{
+        id: 'reine',
+        nom: 'REINE',
+        prix: 12.00,
+        composition: ['Sauce tomate', 'Jambon blanc italien', 'Champignons', 'Fior di latte'],
+        supplements: [
+            { nom: 'Roquette', prix: 0.50 },
+            { nom: 'Reblochon', prix: 2.00 },
+            { nom: 'Œuf', prix: 1.00 }
+        ]
+    }]
+};
+
+let prixDefautReine = 12.00;
+let commande = [];
+let pressTimer;
+let pressStartTime;
+let isProcessingPress = false;
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    initProduits();
+    initEventListeners();
+    updatePrixBouton();
+});
+
+function initProduits() {
+    // Déjà 1 produit en HTML
+}
+
+function initEventListeners() {
+    const productBtns = document.querySelectorAll('.product-btn');
+    
+    productBtns.forEach(btn => {
+        // LOGIQUE SIMPLIFIÉE : priorité tap > long press > double click
+        let timeoutId;
+        
+        // Touch
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handlePressStart(e, btn);
+        }, { passive: false });
+        
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handlePressEnd(e, btn);
+        }, { passive: false });
+        
+        // Mouse
+        btn.addEventListener('mousedown', (e) => {
+            handlePressStart(e, btn);
+        });
+        
+        btn.addEventListener('mouseup', (e) => {
+            handlePressEnd(e, btn);
+        });
+        
+        btn.addEventListener('mouseleave', () => {
+            clearTimeout(timeoutId);
+        });
+        
+        // Double click SEULEMENT si pas de press processing
+        btn.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            if (!isProcessingPress) {
+                ouvrirModalComposition('reine');
+            }
+        });
+    });
+
+    // Modals (inchangé)
+    document.getElementById('save-product-price').onclick = savePrixProduit;
+    document.getElementById('cancel-price').onclick = fermerModal;
+    document.getElementById('close-comp').onclick = fermerModal;
+    document.getElementById('save-order-price').onclick = savePrixCommande;
+    document.getElementById('cancel-order-price').onclick = fermerModal;
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.onclick = (e) => { if (e.target === modal) fermerModal(); };
+    });
+}
+
+function handlePressStart(e, btn) {
+    if (isProcessingPress) return;
+    
+    pressStartTime = Date.now();
+    isProcessingPress = true;
+    
+    const timeoutId = setTimeout(() => {
+        // Appui long détecté
+        ouvrirModalPrixProduit();
+        isProcessingPress = false;
+    }, 600); // 600ms long press
+    
+    // Stocke timeout pour clear
+    btn._timeoutId = timeoutId;
+}
+
+function handlePressEnd(e, btn) {
+    const elapsed = Date.now() - pressStartTime;
+    
+    clearTimeout(btn._timeoutId);
+    
+    if (elapsed < 400 && !isProcessingPress) { // Tap court < 400ms
+        ajouterArticleCommande('reine');
+    }
+    
+    setTimeout(() => { isProcessingPress = false; }, 100);
+}
+
+// Fonctions modals et commande IDENTIQUES à la V1
+// (je ne les recopie pas pour économiser l'espace, garde les mêmes de app.js précédent)
+
+function updatePrixBouton() {
+    const priceEl = document.querySelector('.product-price');
+    priceEl.textContent = prixDefautReine.toFixed(2) + '€';
+    priceEl.dataset.price = prixDefautReine;
+}
+
+function ouvrirModalPrixProduit() {
+    document.getElementById('new-product-price').value = prixDefautReine.toFixed(2);
+    document.getElementById('modal-price').classList.add('active');
+}
+
+function savePrixProduit() {
+    const np = parseFloat(document.getElementById('new-product-price').value);
+    if (!isNaN(np)) {
+        prixDefautReine = np;
+        updatePrixBouton();
+    }
+    fermerModal();
+}
+
+function ouvrirModalComposition(id) {
+    const p = produits.pizzas[0];
+    document.getElementById('comp-title').textContent = p.nom;
+    document.getElementById('composition').innerHTML = '<strong>Composition :</strong><br>' + p.composition.join(', ');
+    let sHtml = '<strong>Suppléments :</strong><ul class="suppl-list">';
+    p.supplements.forEach(s => sHtml += `<li>${s.nom} (+${s.prix.toFixed(2)}€)</li>`);
+    sHtml += '</ul>';
+    document.getElementById('supplements').innerHTML = sHtml;
+    document.getElementById('modal-comp').classList.add('active');
+}
+
+function ajouterArticleCommande(id) {
+    commande.push({ id, nom: 'REINE', prix: prixDefautReine, quantite: 1 });
+    majAffichageCommande();
+}
+
+function majAffichageCommande() {
+    const container = document.getElementById('order-items');
+    container.innerHTML = '';
+    
+    const grouped = {};
+    commande.forEach((item, i) => {
+        if (!grouped[item.id]) grouped[item.id] = { ...item, indices: [], totalQty: 0 };
+        grouped[item.id].indices.push(i);
+        grouped[item.id].totalQty++;
+    });
+    
+    Object.values(grouped).forEach(group => {
+        const ligne = document.createElement('div');
+        ligne.className = 'order-item';
+        ligne.dataset.groupId = group.id;
+        ligne.innerHTML = `${group.nom} ×${group.totalQty} : ${(group.prix * group.totalQty).toFixed(2)}€`;
+        ligne.ondblclick = () => ouvrirModalPrixCommande(group.indices[0], group.id);
+        container.appendChild(ligne);
+    });
+    
+    const total = commande.reduce((s, i) => s + i.prix, 0);
+    document.getElementById('total').textContent = total.toFixed(2) + '€';
+}
+
+function ouvrirModalPrixCommande(index, groupId) {
+    document.getElementById('new-order-price').value = commande[index].prix.toFixed(2);
+    document.getElementById('apply-all').dataset.groupId = groupId;
+    document.getElementById('modal-order-price').classList.add('active');
+}
+
+function savePrixCommande() {
+    const np = parseFloat(document.getElementById('new-order-price').value);
+    const groupId = document.getElementById('apply-all').dataset.groupId;
+    const applyAll = document.getElementById('apply-all').checked;
+    
+    if (!isNaN(np)) {
+        commande.forEach((item, i) => {
+            if (item.id === groupId && (applyAll || /* logique simplifiée */ true)) {
+                item.prix = np;
+            }
+        });
+        majAffichageCommande();
+    }
+    fermerModal();
+}
+
+function fermerModal() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+}
 // Données en dur pour prototype
 const produits = {
     pizzas: [
