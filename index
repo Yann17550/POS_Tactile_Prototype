@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Tactile - Prototype Reine</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Barre catégories -->
+    <div id="categories">
+        <div class="category active" data-cat="pizzas">Pizzas</div>
+    </div>
+
+    <!-- Grille articles -->
+    <div id="products-grid">
+        <div class="product-btn" data-product="reine">
+            <span class="product-name">Reine</span>
+            <span class="product-price" data-price="12.00">12,00 €</span>
+        </div>
+    </div>
+
+    <!-- Panneau commande droite -->
+    <div id="order-panel">
+        <div class="order-header">
+            <input type="text" id="table-num" placeholder="Table" value="1">
+            <input type="number" id="covers" placeholder="Couverts" value="2">
+            <select id="order-type">
+                <option>Sur place</option>
+                <option>À emporter</option>
+            </select>
+        </div>
+        <div id="order-items"></div>
+        <div class="order-total">
+            Total : <span id="total">0,00 €</span>
+        </div>
+    </div>
+
+    <!-- Modal Modifier Prix Produit (appui long) -->
+    <div id="modal-price" class="modal">
+        <div class="modal-content">
+            <h3>Modifier prix Reine</h3>
+            <label>Nouveau prix :</label>
+            <input type="number" id="new-product-price" step="0.01" value="12.00">
+            <div class="modal-buttons">
+                <button id="save-product-price">Sauvegarder</button>
+                <button id="cancel-price">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Composition (double tap article) -->
+    <div id="modal-comp" class="modal">
+        <div class="modal-content">
+            <h3 id="comp-title">Reine</h3>
+            <div id="composition"></div>
+            <div id="supplements"></div>
+            <div class="modal-buttons">
+                <button id="close-comp">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Modifier Prix Commande (double tap sur ligne commande) -->
+    <div id="modal-order-price" class="modal">
+        <div class="modal-content">
+            <h3>Modifier prix ligne commande</h3>
+            <label>Nouveau prix :</label>
+            <input type="number" id="new-order-price" step="0.01">
+            <label><input type="checkbox" id="apply-all"> Appliquer à toutes les "Reine" de cette commande</label>
+            <div class="modal-buttons">
+                <button id="save-order-price">Sauvegarder</button>
+                <button id="cancel-order-price">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
