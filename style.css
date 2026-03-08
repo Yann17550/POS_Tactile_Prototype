@@ -109,7 +109,7 @@ header { /* même CSS header V2 */ }
 
 .header-row label { 
     font-weight: 700; 
-    font-size: 14px;
+    font-size: 18px;
     min-width: 18px;
     text-align: center;
 }
